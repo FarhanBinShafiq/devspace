@@ -218,5 +218,5 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 </p>
 
 <p align="center">
-  Built with ❤️ by developers, for developers.
+  Built with ❤️ by [Farhan](https://github.com/FarhanBinShafiq).
 </p>
