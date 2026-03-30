@@ -61,6 +61,7 @@ export default function Popup() {
   const [copiedId, setCopiedId] = useState(null);
   const [filterFavorites, setFilterFavorites] = useState(false);
   const [newSnippet, setNewSnippet] = useState({ title: '', code: '', tags: '', language: 'javascript' });
+  const colorInputRef = useRef(null);
 
   // ─── Grid Overlay State ───
   const [gridActive, setGridActive] = useState(false);
@@ -119,15 +120,32 @@ export default function Popup() {
 
   // ─── EyeDropper ───
   const handlePickColor = async () => {
-    if (!window.EyeDropper) { alert("EyeDropper API not supported."); return; }
-    try {
-      const result = await new window.EyeDropper().open();
-      const c = result.sRGBHex;
-      const newPicked = [c, ...pickedColors.filter(x => x !== c)].slice(0, 20);
-      setPickedColors(newPicked);
-      chrome?.storage?.local?.set({ pickedColors: newPicked });
-      copyToClipboard(c, 'picked-new');
-    } catch (e) { console.log('EyeDropper canceled', e); }
+    if (window.EyeDropper) {
+      try {
+        const result = await new window.EyeDropper().open();
+        const c = result.sRGBHex;
+        const newPicked = [c, ...pickedColors.filter(x => x !== c)].slice(0, 20);
+        setPickedColors(newPicked);
+        chrome?.storage?.local?.set({ pickedColors: newPicked });
+        copyToClipboard(c, 'picked-new');
+      } catch (e) {
+        console.log('EyeDropper canceled', e);
+      }
+    } else if (colorInputRef.current) {
+      // Fallback for browsers without EyeDropper API (like Firefox)
+      colorInputRef.current.click();
+    } else {
+      alert("EyeDropper API not supported in this browser.");
+    }
+  };
+
+  const handleColorChange = (e) => {
+    const c = e.target.value;
+    if (!c) return;
+    const newPicked = [c, ...pickedColors.filter(x => x !== c)].slice(0, 20);
+    setPickedColors(newPicked);
+    chrome?.storage?.local?.set({ pickedColors: newPicked });
+    copyToClipboard(c, 'picked-new');
   };
 
   // ─── Grid Overlay ───
@@ -191,6 +209,15 @@ export default function Popup() {
     <div className="w-[460px] h-[600px] bg-[#09090b] text-zinc-100 flex flex-col font-sans relative overflow-hidden selection:bg-indigo-500/30">
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-violet-600/10 rounded-full blur-[100px] pointer-events-none" />
+
+      {/* Hidden Color Input Fallback */}
+      <input
+        type="color"
+        ref={colorInputRef}
+        onChange={handleColorChange}
+        className="sr-only p-0 w-0 h-0 border-none absolute -z-10"
+        aria-hidden="true"
+      />
 
       {/* ═══ Header ═══ */}
       <div className="flex-none pt-4 px-5 pb-3 flex flex-col gap-3 border-b border-white/5 relative z-10 bg-[#09090b]/80 backdrop-blur-xl">
